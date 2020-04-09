@@ -109,8 +109,9 @@ class Sequential:
             loss_grad=self.model[len(self.model)-i].backprop(layer_activations[len(self.model)-i-1],loss_grad)
         return np.mean(loss)
 
-    def interate_minibatches(self,inputs,targets,batch_size,shuffle=False):
-        assert len(inputs)==len(targets)
+    def batch_generator(self,inputs,targets,batch_size,shuffle):
+        if len(inputs)!=len(targets):
+            raise Exception("Inputs and target numbers are not same.")
         if shuffle:
             indices=np.random.permutation(len(inputs))
         for start_idx in trange(0,len(inputs)-batch_size+1,batch_size):
@@ -120,9 +121,9 @@ class Sequential:
                 excerpt=slice(start_idx,start_idx+batch_size)
             yield inputs[excerpt],targets[excerpt]
 
-    def fit(self,X_train,y_train,epochs,batch_size):
+    def fit(self,X_train,y_train,epochs,batch_size,shuffle=True):
         for epoch in range(epochs):
-            for x_t,y_t in self.interate_minibatches(X_train,y_train,batch_size=batch_size,shuffle=True):
+            for x_t,y_t in self.batch_generator(X_train,y_train,batch_size=batch_size,shuffle=shuffle):
                 self.train(x_t,y_t)
             self.train_log.append(np.mean(self.predict(X_train)==y_train))
             self.val_log.append(np.mean(self.predict(X_val)==y_val))
